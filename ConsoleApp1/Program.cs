@@ -19,7 +19,13 @@ int foodY = 0;
 
 // Available player and food strings
 string[] states = { "('-')", "(^-^)", "(X_X)" };
-string[] foods = { "@@@@@", "$$$$$", "#####" };
+string[] foods = { "@", "$", "#" };
+
+bool[] foodEatingProgress = new bool[5]; // [ ][ ][ ][ ][ ]
+for(int i = 0; i< foodEatingProgress.Length; i++)
+{
+    foodEatingProgress[i] = false;
+}
 
 // Current player string displayed in the Console
 string player = states[0];
@@ -45,6 +51,10 @@ while (!shouldExit)
 //Checks ammount of food player ate and changes apperance if enough was eaten
 void StatusChanger()
 {
+    for(int i = 0; i < 5; i++)
+    {
+        foodEatingProgress[i] = false;
+    }
     int currentFood = ShowFood();
     player = states[currentFood];
 }
@@ -53,12 +63,26 @@ void StatusChanger()
 //Checks if player stuffed his bell'ey
 void FoodEaten()
 {
-    // if ((playerX >= foodX && playerX < foodX + foods[food].Length) && playerY == foodY)
-    // {
-    //     StatusChanger();
-    // }
+    if(playerY == foodY && (playerX == foodX || playerX <= foodX + foodEatingProgress.Length))
+    {
+        int eatingProgress = foodX - playerX;
+        if(eatingProgress < 0)
+        {
+            for (int i = Math.Abs(eatingProgress); i < 5; i++)
+            {
+                foodEatingProgress[i] = true;
+            }
+        }
+        else if (eatingProgress > 0)
+        {
+            for (int i = 0; i < foodEatingProgress.Length - eatingProgress; i++)
+            {
+                foodEatingProgress[i] = true;
+            }
+        }
+    }
 
-    if (playerX == foodX && playerY == foodY)
+    if ((playerX == foodX && playerY == foodY) || foodEatingProgress.All(food => food))
     {
         StatusChanger();
     }
@@ -83,11 +107,19 @@ int ShowFood()
         foodX = random.Next(0, width - player.Length);
         foodY = random.Next(0, height - 1);
         // Display the food at the location
-        Console.SetCursorPosition(foodX, foodY);
-        Console.Write(foods[food]);
-
-    } while (playerX == foodX && playerY == foodY);
+        DisplayFood();
+                                                                            //bool[i]
+    } while ((playerX == foodX && playerY == foodY) || foodEatingProgress.All(food => food));
     return food;
+}
+
+void DisplayFood()
+{
+    Console.SetCursorPosition(foodX < 0 ? 0 : foodX, foodY < 0 ? 0 : foodY);
+    foreach (bool isEaten in foodEatingProgress)
+    {
+        Console.Write(isEaten ? " " : foods[food]);
+    }
 }
 
 void PlayerStat()
@@ -140,8 +172,7 @@ void Move()
     }
 
     // Set the food position and draw
-    Console.SetCursorPosition(foodX < 0 ? 0 : foodX, foodY < 0 ? 0 : foodY);
-    Console.Write(foods[food]);
+    DisplayFood();
 
     FoodEaten();
 
