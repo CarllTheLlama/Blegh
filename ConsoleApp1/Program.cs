@@ -7,6 +7,7 @@ Console.CursorVisible = false;
 int height = Console.WindowHeight - 1;
 int width = Console.WindowWidth - 5;
 bool shouldExit = false;
+int freezeCounter = 0;
 
 // Console position of the player
 int playerX = 0;
@@ -22,7 +23,7 @@ string[] states = { "('-')", "(^-^)", "(X_X)" };
 string[] foods = { "@", "$", "#" };
 
 bool[] foodEatingProgress = new bool[5]; // [ ][ ][ ][ ][ ]
-for(int i = 0; i< foodEatingProgress.Length; i++)
+for (int i = 0; i < foodEatingProgress.Length; i++)
 {
     foodEatingProgress[i] = false;
 }
@@ -45,13 +46,15 @@ while (!shouldExit)
         break;
     }
     Move();
+    MovementSpeed();
+    FreezePlayer();
     FoodEaten();
 }
 
 //Checks ammount of food player ate and changes apperance if enough was eaten
 void StatusChanger()
 {
-    for(int i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
     {
         foodEatingProgress[i] = false;
     }
@@ -63,10 +66,10 @@ void StatusChanger()
 //Checks if player stuffed his bell'ey
 void FoodEaten()
 {
-    if(playerY == foodY && (playerX == foodX || playerX <= foodX + foodEatingProgress.Length))
+    if (playerY == foodY && (playerX == foodX || playerX <= foodX + foodEatingProgress.Length))
     {
         int eatingProgress = foodX - playerX;
-        if(eatingProgress < 0)
+        if (eatingProgress < 0)
         {
             for (int i = Math.Abs(eatingProgress); i < 5; i++)
             {
@@ -102,13 +105,13 @@ int ShowFood()
     {
         // Update food to a random index
         food = random.Next(0, foods.Length);
-        
+
         // Update food position to a random location
         foodX = random.Next(0, width - player.Length);
         foodY = random.Next(0, height - 1);
         // Display the food at the location
         DisplayFood();
-                                                                            //bool[i]
+        //bool[i]
     } while ((playerX == foodX && playerY == foodY) || foodEatingProgress.All(food => food));
     return food;
 }
@@ -122,23 +125,33 @@ void DisplayFood()
     }
 }
 
-void PlayerStat()
-{
-
-}
 // Temporarily stops the player from moving
 void FreezePlayer()
 {
-    System.Threading.Thread.Sleep(1000);
-    player = states[0];
+
+    while (player == states[2] && freezeCounter == 0)
+    {
+        System.Threading.Thread.Sleep(1000);
+        freezeCounter++;
+    }
+    if (player == states[1] || player == states[0])
+    {
+        freezeCounter = 0;
+    }
+}
+void MovementSpeed()
+{
+    while (player == states[1])
+    {
+        Move(5);
+    }
 }
 
 // Reads directional input from the Console and moves the player
-void Move()
+void Move(int moveSpeed = 1)
 {
     int lastX = playerX;
     int lastY = playerY;
-
     switch (Console.ReadKey(true).Key)
     {
         case ConsoleKey.UpArrow:
@@ -148,22 +161,20 @@ void Move()
             playerY++;
             break;
         case ConsoleKey.LeftArrow:
-            playerX--;
+            playerX = playerX - moveSpeed;
             break;
         case ConsoleKey.RightArrow:
-            playerX++;
+            playerX = playerX + moveSpeed;
             break;
         case ConsoleKey.Escape:
             shouldExit = true;
-            break;    
-         default:
+            break;
+        default:
             Console.Clear();
             Console.WriteLine("You pressed key other than arrows, you fucking donkey.");
             shouldExit = true;
             return;
     }
-
-
     // Clear the characters at the previous position
     Console.SetCursorPosition(lastX, lastY);
     for (int i = 0; i < player.Length; i++)
@@ -173,7 +184,6 @@ void Move()
 
     // Set the food position and draw
     DisplayFood();
-
     FoodEaten();
 
     // Keep player position within the bounds of the Terminal window
@@ -184,7 +194,6 @@ void Move()
     Console.SetCursorPosition(playerX, playerY);
     Console.Write(player);
 }
-
 // Clears the console, displays the food and player
 void InitializeGame()
 {
